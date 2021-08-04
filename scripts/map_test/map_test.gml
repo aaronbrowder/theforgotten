@@ -50,9 +50,9 @@ function map_test(region, room_x, room_y)
 	room_place_objects(rm);
 	var t7 = get_timer();
 	
-	//show_debug_message("");
-	//show_debug_message("path | left -> right: "    + path_to_string(room_find_path(tree, 0, rm.exits.left.yy, 2, rm.exits.right.yy, 9)));
-	//show_debug_message("path | right -> left: "    + path_to_string(room_find_path(tree, 2, rm.exits.right.yy, 0, rm.exits.left.yy, 9)));
+	show_debug_message("");
+	show_debug_message("path | left -> right: "    + path_to_string(room_find_path(tree, 0, rm.exits.left.yy, 2, rm.exits.right.yy, 9)));
+	show_debug_message("path | right -> left: "    + path_to_string(room_find_path(tree, 2, rm.exits.right.yy, 0, rm.exits.left.yy, 9)));
 
 	//visualize_tree(tree);
 	ds_grid_destroy(tree.h_borders);
