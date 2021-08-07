@@ -9,10 +9,22 @@
 #macro room_openness 0.5
 #macro wall_thickness 1
 
+#macro player_gravity 0.55
+#macro player_walk_speed 3.8
+#macro player_jump_speed 10.5
+
 enum sides
 {
 	top,
 	bottom,
+	left,
+	right
+}
+
+enum directions
+{
+	up,
+	down,
 	left,
 	right
 }

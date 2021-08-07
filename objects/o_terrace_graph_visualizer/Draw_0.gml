@@ -26,11 +26,11 @@ for (var i = 0; i < ds_list_size(graph); i++)
 		draw_vertex_color(tile2_x, tile2_y, c_white, 1);
 		draw_primitive_end();
 		
-		var text_x = (tile2_x + tile1_x) / 2;
-		var text_y = (tile2_y + tile1_y) / 2;
-		var c = c_white;
-		draw_set_halign(fa_center);
-		draw_set_valign(fa_middle);
-		draw_text_color(text_x, text_y, string(connection.distance), c, c, c, c, 1);
+		//var text_x = (tile2_x + tile1_x) / 2;
+		//var text_y = (tile2_y + tile1_y) / 2;
+		//var c = c_white;
+		//draw_set_halign(fa_center);
+		//draw_set_valign(fa_middle);
+		//draw_text_color(text_x, text_y, string(connection.distance), c, c, c, c, 1);
 	}
 }

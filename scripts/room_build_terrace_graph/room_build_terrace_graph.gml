@@ -1,7 +1,6 @@
 
-function room_build_terrace_graph(blocks, tree)
+function room_build_terrace_graph(tiles, tree)
 {
-	var tiles = merge_blocks(blocks);
 	var standable_tiles = rbtg_find_standable_tiles(tiles);
 	var terraces = rbtg_build_terraces(standable_tiles);
 	var graph = rbtg_build_terrace_graph(terraces, tree);
@@ -297,9 +296,11 @@ function rbtg_measure_distance_between_key_tile_and_block_boundary(key_tile, blo
 
 function get_line_distance(tile1, tile2)
 {
+	// we treat horizontal distance as longer because when jumping it is generally harder to cover
+	// distance horizontally than vertically
 	return sqrt(
-		sqr(abs(tile1.row - tile2.row)) +
-		sqr(abs(tile1.col - tile2.col))
+		sqr(abs(tile1.row - tile2.row) * 0.8) +
+		sqr(abs(tile1.col - tile2.col) * 1.25)
 	);
 }
 

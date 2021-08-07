@@ -101,8 +101,8 @@
     "resourceType": "GMNineSliceData",
   },
   "parent": {
-    "name": "Sprites",
-    "path": "folders/Sprites.yy",
+    "name": "test",
+    "path": "folders/Sprites/test.yy",
   },
   "resourceVersion": "1.0",
   "name": "s_tree_visualizer",

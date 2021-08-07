@@ -91,7 +91,7 @@ function rgb_generate_border(
 
 function rgb_find_left_block(region, room_x, room_y, blocks, block_x, block_y, done)
 {
-	var adjacent_room = room_x > 0 ? region[# room_x - 1, room_y] : 0;
+	var adjacent_room = room_x > 0 ? region.rooms[# room_x - 1, room_y] : 0;
 	
 	if (block_x == 0 && adjacent_room != 0)
 	{
@@ -106,7 +106,7 @@ function rgb_find_left_block(region, room_x, room_y, blocks, block_x, block_y, d
 
 function rgb_find_right_block(region, room_x, room_y, blocks, block_x, block_y, done)
 {
-	var adjacent_room = room_x < region_width - 1 ? region[# room_x + 1, room_y] : 0;
+	var adjacent_room = room_x < region_width - 1 ? region.rooms[# room_x + 1, room_y] : 0;
 	
 	if (block_x == blocks_per_room_h - 1 && adjacent_room != 0)
 	{
@@ -121,7 +121,7 @@ function rgb_find_right_block(region, room_x, room_y, blocks, block_x, block_y, 
 
 function rgb_find_upper_block(region, room_x, room_y, blocks, block_x, block_y, done)
 {
-	var adjacent_room = room_y > 0 ? region[# room_x, room_y - 1] : 0;
+	var adjacent_room = room_y > 0 ? region.rooms[# room_x, room_y - 1] : 0;
 	
 	if (block_y == 0 && adjacent_room != 0)
 	{
@@ -136,7 +136,7 @@ function rgb_find_upper_block(region, room_x, room_y, blocks, block_x, block_y, 
 
 function rgb_find_lower_block(region, room_x, room_y, blocks, block_x, block_y, done)
 {
-	var adjacent_room = room_y < region_height - 1 ? region[# room_x, room_y + 1] : 0;
+	var adjacent_room = room_y < region_height - 1 ? region.rooms[# room_x, room_y + 1] : 0;
 	
 	if (block_y == blocks_per_room_v - 1 && adjacent_room != 0)
 	{
@@ -182,7 +182,7 @@ function rgb_set_tile(block, row, col, value)
 
 function rgb_read_opposite_border(block, side)
 {
-	var data;
+	var data = array_create(block_base_size);
 	for (var i = block_base_size - 1; i >= 0; i--)
 	{
 		if (side == sides.bottom)

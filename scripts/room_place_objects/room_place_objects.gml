@@ -1,59 +1,45 @@
 
-function room_place_objects(rm)
+function room_place_objects(tiles, platforms)
 {
 	var w = block_base_size * blocks_per_room_h;
 	var h = block_base_size * blocks_per_room_v;
 	
-	var merged = ds_grid_create(w, h);
-	ds_grid_clear(merged, 0);
-	
-	var done = ds_grid_create(w, h);
-	ds_grid_clear(done, 0);
-	
-	for (var block_x = 0; block_x < blocks_per_room_h; block_x++)
-	{
-		for (var block_y = 0; block_y < blocks_per_room_v; block_y++)
-		{
-			var block = rm.blocks[# block_x, block_y];
-			for (var row = 0; row < block_base_size; row++)
-			{
-				for (var col = 0; col < block_base_size; col++)
-				{
-					var value = block[row][col];
-					merged[# col + (block_x * block_base_size), row + (block_y * block_base_size)] = value;
-				}
-			}
-		}
-	}
+	var used_tiles = blank_tiles_array(w, h);
+	var used_platforms = blank_tiles_array(w, h);
 	
 	var tilemap = layer_tilemap_get_id(layer_get_id("Tiles"));
+	var platforms_tilemap = layer_tilemap_get_id(layer_get_id("Platforms"));
 	var decorations_front_tilemap = layer_tilemap_get_id(layer_get_id("Decorations_Front"));
+	var decorations_back_tilemap = layer_tilemap_get_id(layer_get_id("Decorations_Back"));
 	
-	for (var xx = 0; xx < w; xx++)
+	for (var col = 0; col < w; col++)
 	{
-		for (var yy = 0; yy < h; yy++)
+		for (var row = 0; row < h; row++)
 		{
-			rpo_place_tile(xx, yy, merged, tilemap, decorations_front_tilemap, w, h);
-			if (merged[# xx, yy] == 1 && done[# xx, yy] == 0)
+			rpo_place_tile(row, col, w, h, tiles, platforms,
+				tilemap, platforms_tilemap, decorations_front_tilemap, decorations_back_tilemap
+			);
+			if (tiles[row][col] == 1 && used_tiles[row][col] == 0)
 			{
-				rpo_place_wall_object(xx, yy, merged, done, w, h);
+				rpo_place_object(row, col, tiles, used_tiles, w, h, o_wall);
+			}
+			if (platforms[row][col] == 1 && used_platforms[row][col] == 0)
+			{
+				rpo_place_object(row, col, platforms, used_platforms, w, h, o_platform);
 			}
 		}
 	}
-	
-	ds_grid_destroy(merged);
-	ds_grid_destroy(done);
 }
 
-function rpo_place_wall_object(xx, yy, merged, done, w, h)
+function rpo_place_object(row, col, tiles, used_tiles, w, h, obj_index)
 {
 	// find out how far to the right it goes
-	var end_x = xx;
-	for (var i = xx + 1; i < w; i++)
+	var end_col = col;
+	for (var i = col + 1; i < w; i++)
 	{
-		if (merged[# i, yy] == 1)
+		if (tiles[row][i] == 1)
 		{
-			end_x = i;
+			end_col = i;
 		}
 		else
 		{
@@ -61,14 +47,14 @@ function rpo_place_wall_object(xx, yy, merged, done, w, h)
 		}
 	}
 	// find out how far down it goes
-	var end_y = yy;
-	for (var j = yy + 1; j < h; j++)
+	var end_row = row;
+	for (var j = row + 1; j < h; j++)
 	{
 		// terminate as soon as any tile on this row is empty
 		var terminate = false;
-		for (var i = xx; i <= end_x; i++)
+		for (var i = col; i <= end_col; i++)
 		{
-			if (merged[# i, j] == 0)
+			if (tiles[j][i] == 0)
 			{
 				terminate = true;
 				break;
@@ -80,51 +66,129 @@ function rpo_place_wall_object(xx, yy, merged, done, w, h)
 		}
 		else
 		{
-			end_y = j;
+			end_row = j;
 		}
 	}
-	// create the wall object
 	{
-		var wall = instance_create_layer(xx * tile_size, yy * tile_size, "Instances", o_wall);
-		wall.image_xscale = 1 + (end_x - xx);
-		wall.image_yscale = 1 + (end_y - yy);
+		var obj = instance_create_layer(col * tile_size, row * tile_size, "Instances", obj_index);
+		obj.image_xscale = 1 + (end_col - col);
+		obj.image_yscale = 1 + (end_row - row);
 	}
-	// update the "done" array
-	for (var i = xx; i < end_x; i++)
+	for (var i = col; i < end_col; i++)
 	{
-		for (var j = yy; j < end_y; j++)
+		for (var j = row; j < end_row; j++)
 		{
-			done[# i, j] = 1;
+			used_tiles[j][i] = 1;
 		}
 	}
 }
 
-function rpo_place_tile(xx, yy, merged, tilemap, decorations_front_tilemap, w, h)
+function rpo_place_tile(row, col, w, h, tiles, platforms,
+	tilemap, platforms_tilemap, decorations_front_tilemap, decorations_back_tilemap)
 {
-	var data = rpo_get_tile_data(xx, yy, merged, w, h);
-	tilemap_set(tilemap, data, xx, yy);
+	var tile_data = rpo_get_tile_data(row, col, tiles, w, h);
+	tilemap_set(tilemap, tile_data, col, row);
+	
+	if (platforms[row][col] && !tilemap_get(platforms_tilemap, col, row))
+	{
+		rpo_place_platform_tiles(row, col, w, h, tiles, platforms,
+			platforms_tilemap, decorations_back_tilemap
+		);
+	}
 	
 	//data = rpo_get_decorations_front_tile_data(xx, yy, merged, w, h);
 	//tilemap_set(decorations_front_tilemap, data, xx, yy);
 }
 
-function rpo_get_tile_data(xx, yy, merged, w, h)
+function rpo_place_platform_tiles(row, col, w, h, tiles, platforms,
+	platforms_tilemap, decorations_back_tilemap)
 {
-	var me = merged[# xx, yy];
+	// find out how far to the right the platform goes
+	var width = 0;
+	while (col + width < w && platforms[row][col + width])
+	{
+		width++;
+	}
+	// find out how far down the platform goes
+	var height = 0;
+	while (true)
+	{
+		height++;
+		var r = row + height;
+		var any = false;
+		for (var i = 0; i < width; i++)
+		{
+			var c = col + i;
+			if (r < h - 1 && !tiles[r][c])
+			{
+				any = true;
+			}
+		}
+		if (!any)
+		{
+			break;
+		}
+	}
+	for (var i = 0; i < width; i++)
+	{
+		var r = row;
+		var c = col + i;
+		// draw the platform top
+		if (row == h - 1)
+		{
+			// use a faded version for the platform over a bottom exit
+			tilemap_set(platforms_tilemap, 2, c, row);
+		}
+		else
+		{
+			tilemap_set(platforms_tilemap, 1, c, row);
+			// draw the cosmetic dirt above the platform
+			var dirt_data = 5;
+			var connect_left  = c > 0     && (tiles[r - 1][c - 1] || platforms[r][c - 1] || platforms[r - 1][c - 1]);
+			var connect_right = c < w - 1 && (tiles[r - 1][c + 1] || platforms[r][c + 1] || platforms[r - 1][c + 1]);
+			if (connect_left && connect_right)
+			{
+				dirt_data = 4;
+			}
+			else if (connect_left)
+			{
+				dirt_data = 2;
+			}
+			else if (connect_right)
+			{
+				dirt_data = 1;
+			}
+			tilemap_set(decorations_back_tilemap, dirt_data, c, r - 1);
+		}
+		// draw platforms all the way down
+		for (var j = 0; j < height; j++)
+		{
+			r = row + j;
+			if (r < h - 1 && !tiles[r][c] && !platforms[r][c])
+			{
+				tilemap_set(platforms_tilemap, 3, c, r);
+			}
+		}
+	}
+}
+
+function rpo_get_tile_data(row, col, tiles, w, h)
+{
+	var me = tiles[row][col];
 	
-	var nn = (yy == 0)     ? 1 : merged[# xx, yy - 1];
-	var ss = (yy == h - 1) ? 1 : merged[# xx, yy + 1];
-	var ww = (xx == 0)     ? 1 : merged[# xx - 1, yy];
-	var ee = (xx == w - 1) ? 1 : merged[# xx + 1, yy];
+	var nn = (row == 0)     ? 1 : tiles[row - 1][col];
+	var ss = (row == h - 1) ? 1 : tiles[row + 1][col];
+	var ww = (col == 0)     ? 1 : tiles[row][col - 1];
+	var ee = (col == w - 1) ? 1 : tiles[row][col + 1];
 	
-	var nw = (yy == 0 || xx == 0)         ? 1 : merged[# xx - 1, yy - 1];
-	var ne = (yy == 0 || xx == w - 1)     ? 1 : merged[# xx + 1, yy - 1];
-	var sw = (yy == h - 1 || xx == 0)     ? 1 : merged[# xx - 1, yy + 1];
-	var se = (yy == h - 1 || xx == w - 1) ? 1 : merged[# xx + 1, yy + 1];
+	var nw = (row == 0 || col == 0)         ? 1 : tiles[row - 1][col - 1];
+	var ne = (row == 0 || col == w - 1)     ? 1 : tiles[row - 1][col + 1];
+	var sw = (row == h - 1 || col == 0)     ? 1 : tiles[row + 1][col - 1];
+	var se = (row == h - 1 || col == w - 1) ? 1 : tiles[row + 1][col + 1];
 	
 	if (!me)
 	{
-		if (!ss || yy == h - 1)
+		if (!ss || row == h - 1)
 		{
 			return 0;	
 		}
@@ -405,27 +469,19 @@ function rpo_get_tile_data(xx, yy, merged, w, h)
 	return 22;
 }
 
-function rpo_get_decorations_front_tile_data(xx, yy, merged, w, h)
+function rpo_get_decorations_front_tile_data(row, col, tiles, w, h)
 {
-	if (merged[# xx, yy])
+	if (tiles[row][col])
 	{
 		return 0;
 	}
 	
-	//var nn = (yy == 0)     ? 1 : merged[# xx, yy - 1];
-	var ss = (yy == h - 1) ? 1 : merged[# xx, yy + 1];
-	//var ww = (xx == 0)     ? 1 : merged[# xx - 1, yy];
-	//var ee = (xx == w - 1) ? 1 : merged[# xx + 1, yy];
+	var ss = (row == h - 1) ? 1 : tiles[row + 1][col];
 	
 	if (!ss)
 	{
 		return 0;
 	}
-	
-	//var nw = (yy == 0 || xx == 0)         ? 1 : merged[# xx - 1, yy - 1];
-	//var ne = (yy == 0 || xx == w - 1)     ? 1 : merged[# xx + 1, yy - 1];
-	//var sw = (yy == h - 1 || xx == 0)     ? 1 : merged[# xx - 1, yy + 1];
-	//var se = (yy == h - 1 || xx == w - 1) ? 1 : merged[# xx + 1, yy + 1];
 
 	var start_frame = irandom_range(1, 8);
 
